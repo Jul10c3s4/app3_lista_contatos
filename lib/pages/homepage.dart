@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:lista_contatos/models/contato.dart';
 
@@ -74,10 +76,13 @@ class _HomePageState extends State<HomePage> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   image: DecorationImage(
-                      image: const AssetImage('assets/images/contato.png')
+                      image: contatos[index].img != null ?
+                        FileImage(File(contatos[index].img.toString())):
+                        const AssetImage('assets/images/contato.png') as ImageProvider,
+                        fit: BoxFit.cover,
+                  ),
                   ),
                 ),
-              ),
               Padding(
                 padding: const EdgeInsets.only(left: 10),
                 child: Column(
@@ -117,6 +122,6 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _showContactPage({Contact? contact}){
-    Navigator.push(context, MaterialPageRoute(builder: (context) => ContactPage())) ;
+    Navigator.push(context, MaterialPageRoute(builder: (context) => ContactPage(contact: contact))) ;
   }
 }
