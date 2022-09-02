@@ -1,8 +1,10 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:lista_contatos/models/contact_helper.dart';
 import 'package:lista_contatos/models/contato.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'contact_page.dart';
 
@@ -34,21 +36,19 @@ class _HomePageState extends State<HomePage> {
           title: Text('Contatos'),
           centerTitle: true,
           actions: <Widget>[
-            //serve para criar um tipo de menu que ocupa um espaço pequeno
+            //serve para criar um tipo de botão com menu que ocupa um espaço pequeno
             PopupMenuButton<OrderOptions>(
-                itemBuilder: (context) => <PopupMenuEntry<OrderOptions>>[
-                      PopupMenuItem<OrderOptions>(
-                          value: OrderOptions.orderaz,
-                          child: Text('Ordenar de A-Z')),
-                      const PopupMenuItem(
-                          value: OrderOptions.orderza,
-                          child: Text('Ordenar de Z-A')),
-                          const PopupMenuItem(
-                          value: OrderOptions.orderza,
-                          child: Text('Ordenar de qualquer jeito')),
-                    ],
-                    onSelected: _orderList,
-                    )
+              itemBuilder: (context) => <PopupMenuEntry<OrderOptions>>[
+                PopupMenuItem<OrderOptions>(
+                    value: OrderOptions.orderaz, child: Text('Ordenar de A-Z')),
+                const PopupMenuItem(
+                    value: OrderOptions.orderza, child: Text('Ordenar de Z-A')),
+                const PopupMenuItem(
+                    value: OrderOptions.orderza,
+                    child: Text('Ordenar de qualquer jeito')),
+              ],
+              onSelected: _orderList,
+            )
           ],
         ),
         backgroundColor: Colors.white54,
@@ -128,10 +128,86 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _showOptions(BuildContext, int index) {}
+  void _showOptions(BuildContext, int index) {
+    showModalBottomSheet(
+        context: context,
+        builder: (context) {
+          return BottomSheet(
+            onClosing: () {},
+            builder: (context) {
+              return Container(
+                padding: const EdgeInsets.all(10),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(10),
+                      child: ElevatedButton(
+                        onPressed: () {
+                          launchUrl(Uri.parse("tel:${contacts[index].phone}"));
+                          Navigator.pop(context);
+                        },
+                        child: const Text(
+                          'Ligar',
+                          style: TextStyle(color: Colors.red, fontSize: 20),
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(10),
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _showContactPage(contact: contacts[index]);
+                        },
+                        child: const Text(
+                          'Editar',
+                          style: TextStyle(color: Colors.red, fontSize: 20),
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(10),
+                      child: ElevatedButton(
+                        onPressed: () {
+                          helper.deleteContact(contacts[index].id!.toInt());
+                          setState(() {
+                            contacts.removeAt(index);
+                            Navigator.pop(context);
+                          });
+                        },
+                        child: const Text(
+                          'Excluir',
+                          style: TextStyle(color: Colors.red, fontSize: 20),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        });
+  }
 
-  void _orderList(OrderOptions result){
-    
+  void _orderList(OrderOptions result) {
+    switch (result) {
+      case OrderOptions.orderaz:
+        setState(() {
+          contacts.sort((a, b) {
+            return a.name!.toLowerCase().compareTo(b.name!.toLowerCase());
+          });
+        });
+        break;
+
+      case OrderOptions.orderza:
+        setState(() {
+          contacts.sort((a, b) {
+            return b.name!.toLowerCase().compareTo(a.name!.toLowerCase());
+          });
+        });
+        break;
+    }
   }
 
   void _getAllContacts() {
@@ -142,9 +218,20 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  void _showContactPage({Contact? contact}) {
-    Navigator.push(context,
-        MaterialPageRoute(builder: (context) => ContactPage(contact: contact)));
+  void _showContactPage({Contact? contact}) async {
+    final recContact = await Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (context) => ContactPage(
+                  contact: contact,
+                )));
+    if (recContact != null) {
+      if (contact != null) {
+        await helper.updateContact(recContact);
+      } else {
+        await helper.saveContact(recContact);
+      }
+      _getAllContacts();
+    }
   }
-
 }
