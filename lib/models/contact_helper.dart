@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:js';
 import 'package:lista_contatos/models/contato.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
